@@ -2,7 +2,7 @@
 import numpy as np
 import pandas as pd
 import os
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import CountVectorizer,TfidfVectorizer
 import yaml
 from src.logger import logging
 import pickle
@@ -43,7 +43,7 @@ def apply_bow(train_data: pd.DataFrame, test_data: pd.DataFrame, max_features: i
     """Apply Count Vectorizer to the data."""
     try:
         logging.info("Applying BOW...")
-        vectorizer = CountVectorizer(max_features=max_features)
+        vectorizer = TfidfVectorizer(max_features=max_features)
 
         X_train = train_data['review'].values
         y_train = train_data['sentiment'].values
