@@ -42,7 +42,7 @@ def load_data(file_path: str) -> pd.DataFrame:
 def apply_bow(train_data: pd.DataFrame, test_data: pd.DataFrame, max_features: int) -> tuple:
     """Apply Count Vectorizer to the data."""
     try:
-        logging.info("Applying BOW...")
+        logging.info("Applying Tfidf...")
         vectorizer = TfidfVectorizer(max_features=max_features)
 
         X_train = train_data['review'].values

@@ -82,7 +82,7 @@ class TestModelLoading(unittest.TestCase):
             "f1": f1_score(y_holdout, y_pred_new)
         }
 
-        print("\n🧪 New (Staging) model metrics:")
+        print("\n New (Staging) model metrics:")
         for k, v in metrics_new.items():
             print(f"{k.capitalize()}: {v:.4f}")
 
@@ -96,11 +96,11 @@ class TestModelLoading(unittest.TestCase):
                 "f1": f1_score(y_holdout, y_pred_old)
             }
 
-            print("\n🏭 Production model metrics:")
+            print("\n Production model metrics:")
             for k, v in metrics_old.items():
                 print(f"{k.capitalize()}: {v:.4f}")
 
-            # ✅ The core gating logic: fail test if new model underperforms
+            #  The core gating logic: fail test if new model underperforms
             for metric in ["accuracy", "precision"]:
                 self.assertGreaterEqual(
                     metrics_new[metric],
@@ -109,7 +109,7 @@ class TestModelLoading(unittest.TestCase):
                     f"is worse than production {metric}={metrics_old[metric]:.4f}"
                 )
         else:
-            print("\n⚠️ No Production model found for comparison. Skipping comparison tests.")
+            print("\n No Production model found for comparison. Skipping comparison tests.")
 
 
 if __name__ == "__main__":
