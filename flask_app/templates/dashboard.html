@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Evaluation Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; text-align: center; padding: 30px; }
+        .container { background-color: white; padding: 25px; border-radius: 10px; width: 80%; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        table { margin: 20px auto; border-collapse: collapse; width: 90%; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
+        th { background-color: #007bff; color: white; }
+        .positive { color: #155724; background-color: #d4edda; }
+        .negative { color: #721c24; background-color: #f8d7da; }
+        .btn { display: inline-block; margin-top: 20px; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; }
+        .btn:hover { background-color: #45a049; }
+        h2 { color: #333; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📊 Model Evaluation Dashboard</h1>
+
+    <h2>Latest Unseen Input</h2>
+    <p><strong>Text:</strong> {{ latest_input if latest_input else 'No input yet' }}</p>
+    <p><strong>Predicted Sentiment:</strong>
+        {% if latest_prediction == 1 %}
+            <span class="positive">😊 Positive</span>
+        {% elif latest_prediction == 0 %}
+            <span class="negative">😞 Negative</span>
+        {% else %}
+            N/A
+        {% endif %}
+    </p>
+
+    <h2>Performance Comparison</h2>
+    <table>
+        <tr>
+            <th>Metric</th>
+            <th>Unseen Input (Live)</th>
+            <th>Production Model (v{{ model_version }})</th>
+        </tr>
+        {% for metric, value in prod_metrics.items() %}
+        <tr>
+            <td>{{ metric }}</td>
+            <td>{{ unseen_metrics.get(metric, 'N/A') }}</td>
+            <td>{{ value }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <a href="/" class="btn">← Back to Prediction</a>
+</div>
+
+</body>
+</html>

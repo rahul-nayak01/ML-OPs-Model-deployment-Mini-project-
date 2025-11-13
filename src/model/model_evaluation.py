@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pickle
 import json
-from sklearn.metrics import accuracy_score, precision_score, recall_score, roc_auc_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, roc_auc_score ,f1_score
 import logging
 import mlflow
 import mlflow.sklearn
@@ -72,13 +72,14 @@ def evaluate_model(clf, X_test: np.ndarray, y_test: np.ndarray) -> dict:
         accuracy = accuracy_score(y_test, y_pred)
         precision = precision_score(y_test, y_pred)
         recall = recall_score(y_test, y_pred)
-        auc = roc_auc_score(y_test, y_pred_proba)
+        f1 = f1_score(y_test, y_pred)
+        #auc = roc_auc_score(y_test, y_pred_proba)
 
         metrics_dict = {
             'accuracy': accuracy,
             'precision': precision,
             'recall': recall,
-            'auc': auc
+            'f1_score': f1
         }
         logging.info('Model evaluation metrics calculated')
         return metrics_dict

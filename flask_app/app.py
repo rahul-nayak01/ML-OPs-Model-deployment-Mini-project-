@@ -10,6 +10,7 @@ from nltk.corpus import stopwords
 import string
 import re
 import dagshub
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score , roc_auc_score
 
 import warnings
 warnings.simplefilter("ignore", UserWarning)
@@ -69,14 +70,14 @@ def normalize_text(text):
 
 # Below code block is for local use
 # -------------------------------------------------------------------------------------
-#mlflow.set_tracking_uri('https://dagshub.com/rahul-nayak01/ML-OPs-Model-deployment-Mini-project-.mlflow')
-#dagshub.init(repo_owner='rahul-nayak01', repo_name='ML-OPs-Model-deployment-Mini-project-', mlflow=True)
+mlflow.set_tracking_uri('https://dagshub.com/rahul-nayak01/ML-OPs-Model-deployment-Mini-project-.mlflow')
+dagshub.init(repo_owner='rahul-nayak01', repo_name='ML-OPs-Model-deployment-Mini-project-', mlflow=True)
 # -------------------------------------------------------------------------------------
 
 # Below code block is for production use
 # -------------------------------------------------------------------------------------
 # Set up DagsHub credentials for MLflow tracking
-dagshub_token = os.getenv("CAPSTONE_TEST")
+"""dagshub_token = os.getenv("CAPSTONE_TEST")
 if not dagshub_token:
     raise EnvironmentError("CAPSTONE_TEST environment variable is not set")
 
@@ -87,12 +88,15 @@ dagshub_url = "https://dagshub.com"
 repo_owner = "rahul-nayak01"
 repo_name = "ML-OPs-Model-deployment-Mini-project-"
 # Set up MLflow tracking URI
-mlflow.set_tracking_uri(f'{dagshub_url}/{repo_owner}/{repo_name}.mlflow')
+mlflow.set_tracking_uri(f'{dagshub_url}/{repo_owner}/{repo_name}.mlflow')"""
 # -------------------------------------------------------------------------------------
 
 
 # Initialize Flask app
 app = Flask(__name__)
+
+latest_input = None
+latest_prediction = None
 
 # from prometheus_client import CollectorRegistry
 
@@ -157,12 +161,66 @@ def predict():
     # Measure latency
     REQUEST_LATENCY.labels(endpoint="/predict").observe(time.time() - start_time)
 
+    global latest_input, latest_prediction
+    latest_input = text
+    latest_prediction = prediction
     return render_template("index.html", result=prediction)
 
 @app.route("/metrics", methods=["GET"])
 def metrics():
     """Expose only custom Prometheus metrics."""
     return generate_latest(registry), 200, {"Content-Type": CONTENT_TYPE_LATEST}
+
+@app.route("/dashboard", methods=["GET"])
+def dashboard():
+    """Dashboard to compare unseen input evaluation with production model metrics."""
+    REQUEST_COUNT.labels(method="GET", endpoint="/dashboard").inc()
+    start_time = time.time()
+
+    client = mlflow.MlflowClient()
+
+    # Fetch production model metrics
+    prod_version_info = client.get_latest_versions(model_name, stages=["Production"])
+    if prod_version_info:
+        prod_version = prod_version_info[0].version
+        prod_run_id = prod_version_info[0].run_id
+        prod_metrics = client.get_run(prod_run_id).data.metrics
+    else:
+        prod_metrics = {"message": "No production model found."}
+
+    # Evaluate model on unseen data (only if user gave input)
+    unseen_metrics = {}
+    if latest_input and latest_prediction is not None:
+        try:
+            # Transform the same input using vectorizer
+            X_unseen = vectorizer.transform([normalize_text(latest_input)])
+            y_pred = model.predict(X_unseen)
+
+            # Simulate a true label assumption
+            # In real-time systems, you'd log and later compare with ground truth
+            y_true = [latest_prediction]  # placeholder — you can replace this later
+
+            unseen_metrics = {
+                "accuracy": float(accuracy_score(y_true, y_pred)),
+                "precision": float(precision_score(y_true, y_pred, average='binary', zero_division=0)),
+                "recall": float(recall_score(y_true, y_pred, average='binary', zero_division=0)),
+                "f1_score": float(f1_score(y_true, y_pred, average='binary', zero_division=0))
+                #"auc": float(roc_auc_score(y_true, y_pred, average='binary'))
+            }
+        except Exception as e:
+            unseen_metrics = {"error": str(e)}
+
+    REQUEST_LATENCY.labels(endpoint="/dashboard").observe(time.time() - start_time)
+
+    return render_template(
+        "dashboard.html",
+        latest_input=latest_input,
+        latest_prediction=latest_prediction,
+        unseen_metrics=unseen_metrics,
+        prod_metrics=prod_metrics,
+        model_version=model_version,
+    )
+
 
 if __name__ == "__main__":
     # app.run(debug=True) # for local use
