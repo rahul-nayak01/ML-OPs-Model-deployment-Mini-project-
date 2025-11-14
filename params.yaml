@@ -4,3 +4,7 @@ data_ingestion:
 
 feature_engineering:
   max_features: 50
+
+model_building:
+  alpha: 1
+  
