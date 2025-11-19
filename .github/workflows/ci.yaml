@@ -40,7 +40,7 @@ jobs:
           python -m unittest tests/test_model.py
 
       - name: Promote model to production
-        if: failure()
+        if: success()
         env:
           CAPSTONE_TEST: ${{ secrets.CAPSTONE_TEST }}
         run: python scripts/promote_model.py
