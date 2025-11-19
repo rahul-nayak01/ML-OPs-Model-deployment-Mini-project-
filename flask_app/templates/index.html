@@ -69,11 +69,16 @@
         <form action="/predict" method="POST">
             <label for="text">Write text:</label><br>
             <textarea id="text" name="text" rows="5" placeholder="Enter your text here..."></textarea><br>
+
+            <label for="true_label">Actual Sentiment (True Label):</label><br>
+            <select id="true_label" name="true_label">
+                <option value="1">Positive</option>
+                <option value="0">Negative</option>
+            </select><br><br>
+
             <button type="submit">Predict</button>
         </form>
-        <a href="/dashboard" style="display:inline-block;margin-top:15px;color:#007bff;text-decoration:none;">📊 View Dashboard</a>
-
-
+        
         {% if result is not none %}
             <div class="result {% if result == 1 %}positive{% else %}negative{% endif %}">
                 {% if result == 1 %}
@@ -83,6 +88,36 @@
                 {% endif %}
             </div>
         {% endif %}
+
+
+        {% if metrics %}
+            <div class="container" style="margin-top:20px; padding:20px; background:#fff3cd; border-radius: 10px;">
+                <h3>📊 Batch Evaluation Metrics (Last 10 Samples)</h3>
+
+                <table style="width:100%; border-collapse: collapse; margin-top:15px;">
+                    <tr>
+                        <th style="border:1px solid #ccc; padding:8px;">Metric</th>
+                        <th style="border:1px solid #ccc; padding:8px;">Unseen Batch</th>
+                        <th style="border:1px solid #ccc; padding:8px;">Production Model</th>
+                    </tr>
+
+                    {% for metric, value in metrics.items() %}
+                    <tr>
+                        <td style="border:1px solid #ccc; padding:8px;">{{ metric }}</td>
+                        <td style="border:1px solid #ccc; padding:8px;">{{ value }}</td>
+                        <td style="border:1px solid #ccc; padding:8px;">
+                            {% if production_metrics and production_metrics.get(metric) %}
+                                {{ production_metrics.get(metric) }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        {% endif %}
+
     </div>
 
 </body>

@@ -97,6 +97,9 @@ app = Flask(__name__)
 
 latest_input = None
 latest_prediction = None
+batch_true = []
+batch_pred = []
+BATCH_SIZE = 10
 
 # from prometheus_client import CollectorRegistry
 
@@ -141,30 +144,66 @@ def home():
 
 @app.route("/predict", methods=["POST"])
 def predict():
+    global latest_input, latest_prediction, batch_true, batch_pred
+
     REQUEST_COUNT.labels(method="POST", endpoint="/predict").inc()
     start_time = time.time()
 
+    # Inputs
     text = request.form["text"]
-    # Clean text
-    text = normalize_text(text)
-    # Convert to features
-    features = vectorizer.transform([text])
+    true_label = int(request.form["true_label"])
+
+    cleaned = normalize_text(text)
+
+    # Vectorize
+    features = vectorizer.transform([cleaned])
     features_df = pd.DataFrame(features.toarray(), columns=[str(i) for i in range(features.shape[1])])
 
     # Predict
-    result = model.predict(features_df)
-    prediction = result[0]
+    pred = int(model.predict(features_df)[0])
 
-    # Increment prediction count metric
-    PREDICTION_COUNT.labels(prediction=str(prediction)).inc()
-
-    # Measure latency
-    REQUEST_LATENCY.labels(endpoint="/predict").observe(time.time() - start_time)
-
-    global latest_input, latest_prediction
+    # Store latest
     latest_input = text
-    latest_prediction = prediction
-    return render_template("index.html", result=prediction)
+    latest_prediction = pred
+
+    # Add to batch
+    batch_true.append(true_label)
+    batch_pred.append(pred)
+
+    aggregated_metrics = None
+
+    # When batch completes
+    if len(batch_pred) == BATCH_SIZE:
+        aggregated_metrics = {
+            "accuracy": round(accuracy_score(batch_true, batch_pred), 3),
+            "precision": round(precision_score(batch_true, batch_pred, zero_division=0), 3),
+            "recall": round(recall_score(batch_true, batch_pred, zero_division=0), 3),
+            "f1_score": round(f1_score(batch_true, batch_pred, zero_division=0), 3)
+        }
+
+        # Fetch production metrics
+        client = mlflow.MlflowClient()
+        prod_version_info = client.get_latest_versions(model_name, stages=["Production"])
+        
+        if prod_version_info:
+            prod_run_id = prod_version_info[0].run_id
+            production_metrics = client.get_run(prod_run_id).data.metrics
+        else:
+            production_metrics = {}
+
+        # Reset batch
+        batch_true = []
+        batch_pred = []
+
+        return render_template(
+            "index.html",
+            result=pred,
+            metrics=aggregated_metrics,
+            production_metrics=production_metrics
+        )
+    
+    return render_template("index.html", result=pred)
+
 
 @app.route("/metrics", methods=["GET"])
 def metrics():
