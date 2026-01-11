@@ -64,7 +64,7 @@
 35. go to root dir and: "docker build -t capstone-app:latest ."
 36. Try running the image: "docker run -p 8888:5000 capstone-app:latest"
     - This run will give 'OSError: capstone_test environment variable is not set'...obviously
-    - alternate: docker run -p 8888:5000 -e CAPSTONE_TEST=0ff5a9ca44e67490f69b91123cabd6a4a4d63a6a capstone-app:latest
+    - alternate: docker run -p 8888:5000 -e CAPSTONE_TEST=e0a424429afc9f7d69fa91b15656cc0e51ab65e9 capstone-app:latest
     - docker push youruser/capstone-app:latest (optional)
     - optional: try to delete image locally and pull it from dockerhub and run (optional)
 
@@ -72,7 +72,7 @@
 	AWS_ACCESS_KEY_ID
 	AWS_SECRET_ACCESS_KEY
 	AWS_REGION
-	ECR_REPOSITORY (capstone-proj)
+	ECR_REPOSITORY (capstone-p)
     AWS_ACCOUNT_ID
    (Also add this permission to the IAM user: AmazonEC2ContainerRegistryFullAccess)
    
